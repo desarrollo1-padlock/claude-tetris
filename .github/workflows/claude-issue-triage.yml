@@ -1,0 +1,99 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+concurrency:
+  group: issue-triage-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    if: github.event.sender.type != 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude to triage the issue
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --allowedTools "Read,Grep,Glob,Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*)"
+          prompt: |
+            You are triaging issue #${{ github.event.issue.number }} in the repository
+            ${{ github.repository }}. This workflow just fired because the issue was
+            "${{ github.event.action }}".
+
+            This is a dependency-free vanilla-JS Tetris clone. Fixed project layout:
+            - `game.js`      — all game logic: board creation, piece spawn/rotation with
+                                wall kicks, collision detection, line clearing, ghost piece,
+                                main loop, scoring.
+            - `index.html`   — canvas (`#board`) and side panel DOM (`#score`, `#lines`,
+                                `#level`, `#next-canvas`), overlay (`#overlay`,
+                                `#restart-btn`).
+            - `style.css`    — dark retro-arcade theme.
+            - `README.md`    — architecture and controls documentation (in Spanish).
+
+            Steps:
+            1. Run `gh issue view ${{ github.event.issue.number }} --json title,body,labels`
+               to read the current title, body, and any labels already applied.
+            2. Use Read/Grep/Glob on the checked-out repo to ground your analysis in the
+               real code — reference actual file names and function/symbol names. Never
+               invent line numbers or code you have not actually looked at.
+            3. Choose zero or more labels for this issue from EXACTLY this fixed set —
+               do not invent or apply any other label name:
+               `bug`, `documentation`, `duplicate`, `enhancement`, `good first issue`,
+               `help wanted`, `invalid`, `question`, `wontfix`.
+               Apply your chosen labels with
+               `gh issue edit ${{ github.event.issue.number }} --add-label "name1,name2"`.
+               Do not remove any label a human already added.
+            4. Write a diagnosis and post it as a NEW issue comment via
+               `gh issue comment ${{ github.event.issue.number }} --body-file <path>`
+               (write the body to a temp file first; do not pass long multi-line text
+               inline). Do not edit the issue title or body. Do not close the issue. Do
+               not push commits or open a pull request.
+
+            If `${{ github.event.action }}` is `edited`, start the comment body with a
+            one-line note such as "_Re-analysis after issue edit._" before the template
+            below.
+
+            Use exactly this Markdown template for the comment body (English,
+            GitHub-flavored Markdown, keep the whole comment under ~400 words):
+
+            ## 🤖 Claude Issue Diagnosis
+
+            **Type:** <bug | feature request | question | docs | unclear>
+            **Confidence:** <high | medium | low>
+            **Labels applied:** `label-a`, `label-b`
+
+            ### Summary
+            One or two sentences restating the problem in precise terms.
+
+            ### Likely root cause
+            What in the code most plausibly produces this behavior. Reference real
+            files and symbols, e.g. `game.js` → `tryRotate()`. State plainly when the
+            cause cannot be determined from the issue text alone.
+
+            ### Affected areas
+            | File | What is involved |
+            | --- | --- |
+            | `game.js` | ... |
+
+            ### Suggested approach
+            1. Step
+            2. Step
+
+            ### Open questions
+            - Anything the reporter must clarify (omit this section entirely if none).
+
+            <sub>Automated analysis. Not a substitute for human review.</sub>

@@ -53,6 +53,50 @@
         <button id="restart-btn">Reiniciar</button>
       </div>
     </div>
+
+    <div id="pause-menu" class="overlay hidden">
+      <div class="overlay-box">
+        <p id="pause-title">PAUSA</p>
+
+        <div id="pause-main-menu">
+          <button class="menu-btn" id="resume-btn" type="button">Reanudar</button>
+          <button class="menu-btn" id="restart-menu-btn" type="button">Reiniciar</button>
+          <button class="menu-btn" id="controls-menu-btn" type="button">Ver controles</button>
+
+          <div class="level-picker">
+            <span class="label">NIVEL INICIAL</span>
+            <select id="start-level-select" class="menu-btn">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+              <option value="13">13</option>
+              <option value="14">14</option>
+              <option value="15">15</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="pause-controls-panel" class="controls hidden">
+          <ul>
+            <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+            <li><kbd>↑</kbd>/<kbd>X</kbd> rotar</li>
+            <li><kbd>↓</kbd> bajar</li>
+            <li><kbd>Space</kbd> caída</li>
+            <li><kbd>P</kbd>/<kbd>Esc</kbd> pausa</li>
+          </ul>
+          <button class="menu-btn" id="controls-back-btn" type="button">Volver</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="game.js"></script>

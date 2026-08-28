@@ -236,3 +236,120 @@ kbd {
 #restart-btn:hover {
   background: var(--btn-hover-bg);
 }
+
+/* ---- Records ---- */
+.start-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: var(--title-color);
+}
+
+.start-stat {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  color: var(--controls-color);
+}
+
+.start-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.secondary-btn {
+  background: transparent;
+  color: var(--controls-color);
+  border: 1px solid var(--toggle-border);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.secondary-btn:hover {
+  border-color: var(--value-color);
+  color: var(--value-color);
+}
+
+.highscores {
+  min-width: 240px;
+}
+
+.no-records {
+  font-size: 13px;
+  color: var(--controls-color);
+}
+
+.highscore-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.highscore-table td {
+  padding: 4px 6px;
+  color: var(--fg);
+  text-align: left;
+}
+
+.highscore-table .hs-rank {
+  color: var(--label-color);
+  width: 1.5em;
+}
+
+.highscore-table .hs-score {
+  color: var(--value-color);
+  font-weight: 700;
+  text-align: right;
+}
+
+.highscore-table .hs-lines,
+.highscore-table .hs-combo {
+  color: var(--controls-color);
+  text-align: right;
+}
+
+.highscore-table tr.highlight td {
+  color: var(--overlay-score-color);
+  font-weight: 700;
+}
+
+.highscore-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.highscore-form.hidden {
+  display: none;
+}
+
+.highscore-form input {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--toggle-border);
+  background: var(--kbd-bg);
+  color: var(--fg);
+}
+
+.highscore-form button {
+  background: var(--btn-bg);
+  color: var(--btn-color);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.highscore-form button:hover {
+  background: var(--btn-hover-bg);
+}

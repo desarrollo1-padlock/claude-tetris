@@ -40,11 +40,25 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
+const overlayCombo = document.getElementById('overlay-combo');
+const overlayLines = document.getElementById('overlay-lines');
+const highscoreForm = document.getElementById('highscore-form');
+const highscoreNameInput = document.getElementById('highscore-name');
+const saveHighscoreBtn = document.getElementById('save-highscore-btn');
+const overlayHighscores = document.getElementById('overlay-highscores');
+const startScreen = document.getElementById('start-screen');
+const startHighscores = document.getElementById('start-highscores');
+const startBestCombo = document.getElementById('start-best-combo');
+const startBestLines = document.getElementById('start-best-lines');
+const resetScoresBtn = document.getElementById('reset-scores-btn');
+const playBtn = document.getElementById('play-btn');
 
 const THEME_STORAGE_KEY = 'tetris-theme';
 const GRID_LINE_COLORS = { dark: '#22222e', light: '#e4ddc9' };
+const HIGHSCORE_KEY = 'tetris.highscores';
+const MAX_HIGHSCORES = 5;
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, combo, maxCombo;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -108,11 +122,15 @@ function clearLines() {
     }
   }
   if (cleared) {
+    combo++;
+    maxCombo = Math.max(maxCombo, combo);
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     updateHUD();
+  } else {
+    combo = 0;
   }
 }
 
@@ -226,12 +244,117 @@ function drawNext() {
       drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);
 }
 
+function loadHighscores() {
+  try {
+    const raw = localStorage.getItem(HIGHSCORE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveHighscores(list) {
+  try {
+    localStorage.setItem(HIGHSCORE_KEY, JSON.stringify(list));
+  } catch (e) {
+    // localStorage unavailable (file://, private mode) — ignore
+  }
+}
+
+function qualifiesForHighscore(candidateScore) {
+  if (candidateScore <= 0) return false;
+  const list = loadHighscores();
+  if (list.length < MAX_HIGHSCORES) return true;
+  return candidateScore > list[list.length - 1].score;
+}
+
+function insertHighscore(entry) {
+  const list = loadHighscores();
+  list.push(entry);
+  list.sort((a, b) => b.score - a.score);
+  const trimmed = list.slice(0, MAX_HIGHSCORES);
+  saveHighscores(trimmed);
+  return trimmed;
+}
+
+function bestCombo() {
+  return loadHighscores().reduce((max, e) => Math.max(max, e.combo || 0), 0);
+}
+
+function bestLines() {
+  return loadHighscores().reduce((max, e) => Math.max(max, e.lines || 0), 0);
+}
+
+function renderHighscores(container, highlightIndex, list) {
+  list = list || loadHighscores();
+  container.innerHTML = '';
+  if (!list.length) {
+    const empty = document.createElement('p');
+    empty.className = 'no-records';
+    empty.textContent = 'Sin records todavía';
+    container.appendChild(empty);
+    return;
+  }
+  const table = document.createElement('table');
+  table.className = 'highscore-table';
+  const tbody = document.createElement('tbody');
+  list.forEach((entry, i) => {
+    const tr = document.createElement('tr');
+    if (i === highlightIndex) tr.classList.add('highlight');
+    const cells = [
+      String(i + 1),
+      entry.name,
+      Number(entry.score || 0).toLocaleString(),
+      `${entry.lines || 0}L`,
+      `x${entry.combo || 0}`,
+    ];
+    cells.forEach((text, ci) => {
+      const td = document.createElement('td');
+      td.className = ['hs-rank', 'hs-name', 'hs-score', 'hs-lines', 'hs-combo'][ci];
+      td.textContent = text;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  container.appendChild(table);
+}
+
+function updateStartStats() {
+  startBestCombo.textContent = `Mejor combo: x${bestCombo()}`;
+  startBestLines.textContent = `Mejor líneas: ${bestLines()}`;
+}
+
+function handleSaveHighscore() {
+  let name = highscoreNameInput.value.trim().slice(0, 12);
+  if (!name) name = 'Jugador';
+  const entry = { name, score, lines, combo: maxCombo, level, date: new Date().toISOString() };
+  const list = insertHighscore(entry);
+  const idx = list.indexOf(entry);
+  renderHighscores(overlayHighscores, idx, list);
+  highscoreForm.classList.add('hidden');
+}
+
 function endGame() {
   gameOver = true;
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
-  overlay.classList.remove('hidden');
+  overlayCombo.textContent = `Mejor combo: x${maxCombo}`;
+  overlayLines.textContent = `Líneas: ${lines}`;
+  if (qualifiesForHighscore(score)) {
+    highscoreForm.classList.remove('hidden');
+    highscoreNameInput.value = '';
+    renderHighscores(overlayHighscores, -1);
+    overlay.classList.remove('hidden');
+    highscoreNameInput.focus();
+  } else {
+    highscoreForm.classList.add('hidden');
+    renderHighscores(overlayHighscores, -1);
+    overlay.classList.remove('hidden');
+  }
 }
 
 function togglePause() {
@@ -271,6 +394,8 @@ function init() {
   level = 1;
   paused = false;
   gameOver = false;
+  combo = 0;
+  maxCombo = 0;
   dropInterval = 1000;
   dropAccum = 0;
   lastTime = performance.now();
@@ -283,6 +408,7 @@ function init() {
 }
 
 document.addEventListener('keydown', e => {
+  if (!current) return;
   if (e.code === 'KeyP') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
@@ -323,6 +449,22 @@ function toggleTheme() {
 
 restartBtn.addEventListener('click', init);
 themeToggleBtn.addEventListener('click', toggleTheme);
+saveHighscoreBtn.addEventListener('click', handleSaveHighscore);
+highscoreNameInput.addEventListener('keydown', e => {
+  if (e.code === 'Enter') handleSaveHighscore();
+});
+resetScoresBtn.addEventListener('click', () => {
+  if (window.confirm('¿Seguro que quieres borrar los records?')) {
+    saveHighscores([]);
+    renderHighscores(startHighscores, -1);
+    updateStartStats();
+  }
+});
+playBtn.addEventListener('click', () => {
+  startScreen.classList.add('hidden');
+  init();
+});
 
 applyTheme(localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark');
-init();
+renderHighscores(startHighscores, -1);
+updateStartStats();
